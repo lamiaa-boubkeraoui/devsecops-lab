@@ -1,0 +1,57 @@
+name: DevSecOps Pipeline
+
+on:
+push:
+branches: [ &quot;main&quot; ]
+permissions:
+contents: read
+security-events: write
+actions: read
+
+jobs:
+
+devsecops:
+runs-on: ubuntu-latest
+
+steps:
+
+- uses: actions/checkout@v3
+
+############################################
+# 1. Analyse SAST CodeQL
+
+############################################
+- name: Init CodeQL
+uses: github/codeql-action/init@v3
+with:
+languages: python
+
+- name: Run CodeQL
+uses: github/codeql-action/analyze@v3
+
+############################################
+# 2. Analyse sécurité Python avec Bandit
+############################################
+- name: Install Bandit
+run: pip install bandit
+
+- name: Run Bandit
+run: bandit -r api --severity-level high
+
+############################################
+# 3. Build Docker
+############################################
+- name: Build Docker image
+run: docker build -t devsecops-api .
+
+############################################
+
+# 4. Scan Docker avec Trivy
+############################################
+- name: Trivy Scan
+uses: aquasecurity/trivy-action@master
+with:
+scan-type: image
+image-ref: devsecops-api
+severity: CRITICAL,HIGH
+exit-code: 1
