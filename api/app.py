@@ -1,11 +1,10 @@
 from flask import Flask, request
 import sqlite3
 import subprocess
-import bcrypt
+import hashlib
 import os
 
 app = Flask(__name__)
-
 SECRET_KEY = "dev-secret-key-12345"  # Hardcoded secret
 
 
@@ -21,11 +20,8 @@ def login():
     cursor.execute(query)
 
     result = cursor.fetchone()
-    conn.close()
-
     if result:
         return {"status": "success", "user": username}
-
     return {"status": "error", "message": "Invalid credentials"}
 
 
@@ -33,9 +29,7 @@ def login():
 def ping():
     host = request.json.get("host", "")
     output = subprocess.check_output(
-        ["ping", "-c", "1", host],
-        stderr=subprocess.STDOUT,
-        timeout=5
+        ["ping", "-c", "1", host], stderr=subprocess.STDOUT, timeout=5
     )
 
     return {"output": output.decode()}
@@ -50,9 +44,9 @@ def compute():
 
 @app.route("/hash", methods=["POST"])
 def hash_password():
-    pwd = request.json.get("password", "admin").encode()
-    hashed = bcrypt.hashpw(pwd, bcrypt.gensalt())
-    return {"bcrypt": hashed.decode()}
+    pwd = request.json.get("password", "admin")
+    hashed = hashlib.sha256(pwd.encode()).hexdigest()
+    return {"sha256": hashed}
 
 
 @app.route("/readfile", methods=["POST"])
@@ -66,12 +60,8 @@ def readfile():
 
 @app.route("/debug", methods=["GET"])
 def debug():
-    # Renvoie des détails sensibles -> mauvaise pratique
-    return {
-        "debug": True,
-        "secret_key": SECRET_KEY,
-        "environment": dict(os.environ)
-    }
+    # Renvoie des détails sensibles -&gt; mauvaise pratique
+    return {"debug": True, "secret_key": SECRET_KEY, "environment": dict(os.environ)}
 
 
 @app.route("/hello", methods=["GET"])
