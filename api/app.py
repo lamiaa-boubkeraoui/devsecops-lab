@@ -1,7 +1,7 @@
 from flask import Flask, request
 import sqlite3
 import subprocess
-import hashlib
+import bcrypt
 import os
 
 app = Flask(__name__)
@@ -32,8 +32,11 @@ def login():
 @app.route("/ping", methods=["POST"])
 def ping():
     host = request.json.get("host", "")
-    cmd = f"ping -c 1 {host}"
-    output = subprocess.check_output(cmd, shell=True)
+    output = subprocess.check_output(
+        ["ping", "-c", "1", host],
+        stderr=subprocess.STDOUT,
+        timeout=5
+    )
 
     return {"output": output.decode()}
 
@@ -47,9 +50,9 @@ def compute():
 
 @app.route("/hash", methods=["POST"])
 def hash_password():
-    pwd = request.json.get("password", "admin")
-    hashed = hashlib.md5(pwd.encode()).hexdigest()
-    return {"md5": hashed}
+    pwd = request.json.get("password", "admin").encode()
+    hashed = bcrypt.hashpw(pwd, bcrypt.gensalt())
+    return {"bcrypt": hashed.decode()}
 
 
 @app.route("/readfile", methods=["POST"])
