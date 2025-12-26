@@ -13,8 +13,8 @@ password = request.json.get(&quot;password&quot;)
 conn = sqlite3.connect(&quot;users.db&quot;)
 cursor = conn.cursor()
 
-query = f&quot;SELECT * FROM users WHERE username=&#39;{username}&#39; AND
-password=&#39;{password}&#39;&quot;
+query = f"SELECT * FROM users WHERE username='{username}'AND
+password='{password}'"
 cursor.execute(query)
 
 result = cursor.fetchone()
@@ -58,4 +58,4 @@ return {
 def hello():
 return {&quot;message&quot;: &quot;Welcome to the DevSecOps vulnerable API&quot;}
 if __name__ == &quot;__main__&quot;:
-app.run(host=&quot;0.0.0.0&quot;, port=5000)
+app.run(host="0.0.0.0", port=5000)
