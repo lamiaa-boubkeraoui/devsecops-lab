@@ -3,59 +3,78 @@ import sqlite3
 import subprocess
 import hashlib
 import os
+
 app = Flask(__name__)
-SECRET_KEY = &quot;dev-secret-key-12345&quot; # Hardcoded secret
-@app.route(&quot;/login&quot;, methods=[&quot;POST&quot;])
+
+SECRET_KEY = "dev-secret-key-12345"  # Hardcoded secret
+
+
+@app.route("/login", methods=["POST"])
 def login():
-username = request.json.get(&quot;username&quot;)
-password = request.json.get(&quot;password&quot;)
+    username = request.json.get("username")
+    password = request.json.get("password")
 
-conn = sqlite3.connect(&quot;users.db&quot;)
-cursor = conn.cursor()
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
 
-query = f"SELECT * FROM users WHERE username='{username}'AND
-password='{password}'"
-cursor.execute(query)
+    query = f"SELECT * FROM users WHERE username='{username}' AND password='{password}'"
+    cursor.execute(query)
 
-result = cursor.fetchone()
-if result:
-return {&quot;status&quot;: &quot;success&quot;, &quot;user&quot;: username}
-return {&quot;status&quot;: &quot;error&quot;, &quot;message&quot;: &quot;Invalid credentials&quot;}
-@app.route(&quot;/ping&quot;, methods=[&quot;POST&quot;])
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        return {"status": "success", "user": username}
+
+    return {"status": "error", "message": "Invalid credentials"}
+
+
+@app.route("/ping", methods=["POST"])
 def ping():
-host = request.json.get(&quot;host&quot;, &quot;&quot;)
-cmd = f&quot;ping -c 1 {host}&quot;
-output = subprocess.check_output(cmd, shell=True)
+    host = request.json.get("host", "")
+    cmd = f"ping -c 1 {host}"
+    output = subprocess.check_output(cmd, shell=True)
 
-return {&quot;output&quot;: output.decode()}
+    return {"output": output.decode()}
 
-@app.route(&quot;/compute&quot;, methods=[&quot;POST&quot;])
+
+@app.route("/compute", methods=["POST"])
 def compute():
-expression = request.json.get(&quot;expression&quot;, &quot;1+1&quot;)
-result = eval(expression) # CRITIQUE
-return {&quot;result&quot;: result}
-@app.route(&quot;/hash&quot;, methods=[&quot;POST&quot;])
-def hash_password():
-pwd = request.json.get(&quot;password&quot;, &quot;admin&quot;)
-hashed = hashlib.md5(pwd.encode()).hexdigest()
-return {&quot;md5&quot;: hashed}
-@app.route(&quot;/readfile&quot;, methods=[&quot;POST&quot;])
-def readfile():
-filename = request.json.get(&quot;filename&quot;, &quot;test.txt&quot;)
-with open(filename, &quot;r&quot;) as f:
-content = f.read()
+    expression = request.json.get("expression", "1+1")
+    result = eval(expression)  # CRITIQUE
+    return {"result": result}
 
-return {&quot;content&quot;: content}
-@app.route(&quot;/debug&quot;, methods=[&quot;GET&quot;])
+
+@app.route("/hash", methods=["POST"])
+def hash_password():
+    pwd = request.json.get("password", "admin")
+    hashed = hashlib.md5(pwd.encode()).hexdigest()
+    return {"md5": hashed}
+
+
+@app.route("/readfile", methods=["POST"])
+def readfile():
+    filename = request.json.get("filename", "test.txt")
+    with open(filename, "r") as f:
+        content = f.read()
+
+    return {"content": content}
+
+
+@app.route("/debug", methods=["GET"])
 def debug():
-# Renvoie des détails sensibles -&gt; mauvaise pratique
-return {
-&quot;debug&quot;: True,
-&quot;secret_key&quot;: SECRET_KEY,
-&quot;environment&quot;: dict(os.environ)
-}
-@app.route(&quot;/hello&quot;, methods=[&quot;GET&quot;])
+    # Renvoie des détails sensibles -> mauvaise pratique
+    return {
+        "debug": True,
+        "secret_key": SECRET_KEY,
+        "environment": dict(os.environ)
+    }
+
+
+@app.route("/hello", methods=["GET"])
 def hello():
-return {&quot;message&quot;: &quot;Welcome to the DevSecOps vulnerable API&quot;}
-if __name__ == &quot;__main__&quot;:
-app.run(host="0.0.0.0", port=5000)
+    return {"message": "Welcome to the DevSecOps vulnerable API"}
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
